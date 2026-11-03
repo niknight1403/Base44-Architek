@@ -63,7 +63,7 @@ async function refresh(){
 form.addEventListener('submit',async e=>{
  e.preventDefault();button.disabled=true;message.textContent='Projektentwurf wird erstellt …';
  try{
-  const body={name:form.name.value,prompt:form.prompt.value};
+  const body={name:document.getElementById('name').value,prompt:document.getElementById('prompt').value};
   const r=await fetch('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const result=await r.json();if(!r.ok)throw Error(result.error||'Fehler');
   message.textContent='Erstellt: workspace/'+result.project.slug+'/PLAN.md · Route: '+result.project.route;
