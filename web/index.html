@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Base44 Architek – Local AI Studio</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui;background:#090d1b;color:#f2f5ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0%,#192755 0%,transparent 45%),#090d1b;min-height:100vh}
+header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #283453;padding:20px max(24px,calc((100vw - 1050px)/2))}
+.logo{font-weight:850;letter-spacing:-.04em;font-size:1.25rem}.logo span{color:#8b9aff}
+.pill{font-size:.8rem;border:1px solid #41527a;border-radius:30px;padding:8px 12px;color:#b5c4e7}
+main{max-width:1050px;margin:60px auto;padding:0 24px}h1{font-size:clamp(2.2rem,6vw,4rem);line-height:1.07;letter-spacing:-.055em;margin:0 0 16px}h1 em{font-style:normal;color:#a3adff}
+.lead{color:#acb9d5;max-width:650px;line-height:1.65;margin-bottom:36px}
+.grid{display:grid;grid-template-columns:1.35fr 1fr;gap:20px}.panel{background:#121b32db;border:1px solid #2b3a61;border-radius:20px;padding:26px;box-shadow:0 18px 45px #04091844}
+h2{margin:0 0 20px;font-size:1.13rem}label{display:block;font-size:.88rem;margin:18px 0 8px;color:#cfdbfb}
+input,textarea{width:100%;background:#0b1225;color:#f4f6ff;border:1px solid #364667;border-radius:11px;padding:14px;font:inherit;outline-offset:2px}
+textarea{resize:vertical;min-height:165px}input:focus,textarea:focus{outline:2px solid #8596ff}
+button{background:linear-gradient(110deg,#637dfd,#9b70ed);color:white;font-weight:750;border:0;border-radius:11px;padding:14px 19px;cursor:pointer;width:100%;margin-top:18px}
+button:disabled{opacity:.6;cursor:wait}small{display:block;color:#8ea0c5;line-height:1.5;margin-top:10px}
+.status{font-size:.87rem;color:#bdd0f8;min-height:22px;margin-top:14px;overflow-wrap:anywhere}.project{padding:14px 0;border-top:1px solid #29385a}.project strong{display:block;margin-bottom:5px}.project small{margin:0}.muted{color:#98a9cb}.mini{font-size:.8rem;color:#9eacfa}
+footer{max-width:1050px;margin:45px auto 20px;padding:0 24px;color:#788bad;font-size:.78rem}
+@media(max-width:750px){header{padding:18px 20px}main{margin:36px auto}.grid{grid-template-columns:1fr}.panel{padding:20px}}
+</style>
+</head>
+<body>
+<header><div class="logo">◆ Base44 <span>Architek</span></div><div class="pill">● Local-first · €0 API-Pflicht</div></header>
+<main>
+<p class="mini">AUTONOMOUS DEVELOPMENT WORKSPACE · STARTER</p>
+<h1>Idee rein.<br><em>Projektplan raus.</em></h1>
+<p class="lead">Entwirf Software mit einem lokalen Ollama-Modell. Ohne Modell bleibt ein einfacher Offline-Entwurf verfügbar. Projektpläne werden lokal gespeichert; automatische App-Builds sind noch nicht enthalten.</p>
+<div class="grid">
+<section class="panel">
+<h2>✦ Neues Projekt</h2>
+<form id="form">
+<label for="name">Projektname</label><input id="name" name="name" placeholder="z. B. Meine Business App" required maxlength="64">
+<label for="prompt">Was soll entwickelt werden?</label><textarea id="prompt" name="prompt" placeholder="Beschreibe die Funktionen, Zielgeräte, Design und gewünschte Abläufe …" required minlength="4" maxlength="8000"></textarea>
+<button id="submit" type="submit">Projektentwurf erstellen</button>
+<div id="message" class="status" role="status" aria-live="polite"></div>
+</form><small>Entwürfe werden in workspace/&lt;projektname&gt;/PLAN.md abgelegt. KI-Antworten sollten vor der Umsetzung geprüft werden.</small>
+</section>
+<section class="panel">
+<h2>Deine Projekte</h2><div id="projects" class="muted">Projekte werden geladen …</div>
+</section>
+</div>
+</main>
+<footer>Base44 Architek · Lokal auf 127.0.0.1 · Keine Cloud-Zahlungsdaten notwendig</footer>
+<script>
+const form=document.getElementById('form'),message=document.getElementById('message'),projects=document.getElementById('projects'),button=document.getElementById('submit');
+async function refresh(){
+ try{
+  const r=await fetch('/api/projects');if(!r.ok)throw Error('API nicht erreichbar');
+  const items=(await r.json()).projects;
+  projects.replaceChildren();
+  if(!items.length){projects.textContent='Noch keine Projekte. Starte links mit einer Idee.';return}
+  items.forEach(p=>{
+   const div=document.createElement('div');div.className='project';
+   const title=document.createElement('strong');title.textContent=p.name;
+   const meta=document.createElement('small');meta.textContent=p.route+' · '+p.status+' · '+p.slug;
+   div.append(title,meta);projects.append(div);
+  });
+ }catch(e){projects.textContent='Projekte konnten nicht geladen werden: '+e.message}
+}
+form.addEventListener('submit',async e=>{
+ e.preventDefault();button.disabled=true;message.textContent='Projektentwurf wird erstellt …';
+ try{
+  const body={name:form.name.value,prompt:form.prompt.value};
+  const r=await fetch('/api/projects',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const result=await r.json();if(!r.ok)throw Error(result.error||'Fehler');
+  message.textContent='Erstellt: workspace/'+result.project.slug+'/PLAN.md · Route: '+result.project.route;
+  form.reset();await refresh();
+ }catch(err){message.textContent='Fehler: '+err.message}
+ finally{button.disabled=false}
+});
+refresh();
+</script>
+</body></html>
